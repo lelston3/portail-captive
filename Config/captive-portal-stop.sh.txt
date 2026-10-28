@@ -1,0 +1,45 @@
+/usr/local/bin/captive-portal-stop.sh
+
+---------------------------------------------------------------------------------------
+
+#!/bin/bash
+
+LOGFILE="/var/log/captive-portal-startup.log"
+
+log_message() {
+    echo "$(date): $1" | tee -a "$LOGFILE"
+}
+
+log_message "=== Démarrage du portail captif hôtelier ==="
+
+# Attendre que le réseau soit disponible
+sleep 10
+
+# Configuration des règles iptables
+log_message "Configuration iptables..."
+/usr/local/bin/captive-portal-iptables.sh
+
+# Activation du forwarding IP
+echo 1 > /proc/sys/net/ipv4/ip_forward
+log_message "IP forwarding activé"
+
+# Redémarrage des services
+log_message "Redémarrage dnsmasq..."
+systemctl restart dnsmasq
+
+log_message "Redémarrage nginx..."
+systemctl restart nginx
+
+# Sauvegarde des règles iptables
+iptables-save > /etc/iptables/rules.v4
+log_message "Règles iptables sauvegardées"
+
+# Test de connectivité
+if ping -c 1 8.8.8.8 > /dev/null 2>&1; then
+    log_message "✓ Connectivité Internet OK"
+else
+    log_message "✗ ATTENTION: Pas de connectivité Internet"
+fi
+
+log_message "✔ Portail captif démarré avec succès"
+log_message "URL du portail: http://192.168.10.220/portal"

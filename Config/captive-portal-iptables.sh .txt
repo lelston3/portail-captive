@@ -1,0 +1,49 @@
+/usr/local/bin/captive-portal-iptables.sh
+
+---------------------------------------------------------------------------------------
+
+#!/bin/bash
+
+# Configuration des variables pour réseau simple
+INTERFACE="eth0"
+LOCAL_IP="192.168.10.220"
+CLIENT_SUBNET="192.168.10.0/24"
+
+# Effacer les règles existantes
+iptables -F
+iptables -t nat -F
+iptables -t mangle -F
+iptables -X
+
+# Politique par défaut
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+
+# Autoriser le loopback
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A OUTPUT -o lo -j ACCEPT
+
+# Autoriser les connexions établies
+iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+# Services essentiels pour le portail captif
+iptables -A INPUT -i $INTERFACE -p udp --dport 53 -j ACCEPT
+iptables -A INPUT -i $INTERFACE -p tcp --dport 53 -j ACCEPT
+iptables -A INPUT -i $INTERFACE -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -i $INTERFACE -p tcp --dport 443 -j ACCEPT
+iptables -A INPUT -i $INTERFACE -p tcp --dport 22 -j ACCEPT
+
+# Redirection du trafic HTTP vers le serveur local
+iptables -t nat -A PREROUTING -s $CLIENT_SUBNET -p tcp --dport 80 ! -d $LOCAL_IP -j DNAT --to-destination $LOCAL_IP:80
+
+# Redirection DNS vers serveur local  
+iptables -t nat -A PREROUTING -s $CLIENT_SUBNET -p udp --dport 53 ! -d $LOCAL_IP -j DNAT --to-destination $LOCAL_IP:53
+iptables -t nat -A PREROUTING -s $CLIENT_SUBNET -p tcp --dport 53 ! -d $LOCAL_IP -j DNAT --to-destination $LOCAL_IP:53
+
+# Masquerading pour l'accès internet
+iptables -t nat -A POSTROUTING -o $INTERFACE -j MASQUERADE
+
+echo "Règles iptables configurées pour portail captif simple"
+
+exit 0

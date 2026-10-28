@@ -1,0 +1,92 @@
+/etc/nginx/sites-available/captive-portal
+
+--------------------------------------------------------------------------------------
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    
+    server_name _;
+    root /var/www/captive-portal;
+    index index.html index.php;
+    
+    access_log /var/log/nginx/captive-portal.access.log;
+    error_log /var/log/nginx/captive-portal.error.log;
+    
+    # Configuration PHP
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+    
+    # Gestion des User-Agents spécifiques
+    location / {
+        if ($http_user_agent ~* "CaptiveNetworkSupport") {
+            return 302 http://192.168.10.220/portal;
+        }
+        
+        if ($http_user_agent ~* "Microsoft NCSI") {
+            return 302 http://192.168.10.220/portal;
+        }
+        
+        if ($host !~* "^192\.168\.10\.220$") {
+            return 302 http://192.168.10.220/portal;
+        }
+        
+        try_files $uri $uri/ /index.html;
+    }
+    
+    # Page du portail captif
+    location /portal {
+        try_files $uri $uri/ /index.html;
+    }
+    
+    # Script de connexion PHP
+    location /connect.php {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+    
+    # URLs de détection de portail captif
+    location /generate_204 {
+        return 302 http://192.168.10.220/portal;
+    }
+    
+    location /connecttest.txt {
+        return 302 http://192.168.10.220/portal;
+    }
+    
+    location /ncsi.txt {
+        return 302 http://192.168.10.220/portal;
+    }
+    
+    location /success.txt {
+        return 302 http://192.168.10.220/portal;
+    }
+    
+    location /hotspot-detect.html {
+        return 302 http://192.168.10.220/portal;
+    }
+    
+    # Ressources statiques
+    location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+}
+
+server {
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+    
+    server_name _;
+    
+    ssl_certificate /etc/ssl/certs/captive-portal.crt;
+    ssl_certificate_key /etc/ssl/private/captive-portal.key;
+    
+    return 302 http://192.168.10.220/portal;
+}

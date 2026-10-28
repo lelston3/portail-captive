@@ -1,0 +1,17 @@
+/etc/systemd/system/captive-portal.service
+
+
+---------------------------------------------------------------------------------------
+
+[Unit] 
+Description=Captive Portal Service 
+After-network.target 
+Wants-network.target 
+[Service] 
+Type=oneshot 
+RemainAfterExit=yes 
+ExecStart=/usr/local/bin/captive-portal-start.sh 
+ExecStop=/usr/local/bin/captive-portal-stop.sh 
+User=root 
+[Install] 
+WantedBy=multi-user.target 

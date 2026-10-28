@@ -1,0 +1,10 @@
+# Mise à jour du système 
+sudo apt update && sudo apt upgrade -y
+
+# Installation des packages nécessaires 
+sudo apt install -y dnsmasq nginx iptables-persistent
+sudo apt install php php-fpm php-cli php-common php-curl php-mbstring php-xml php-mysql -y
+
+# Création des répertoires 
+sudo mkdir -p /var/www/captive-portal 
+sudo mkdir -p /usr/local/bin

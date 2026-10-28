@@ -1,0 +1,98 @@
+/usr/local/bin/captive-portal-start.sh
+
+----------------------------------------------------------------------------------------
+
+#!/bin/bash
+
+# Variables
+LOGFILE="/var/log/captive-portal-startup.log"
+
+# Fonction de logging
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S'): $1" | tee -a "$LOGFILE"
+}
+
+# Début du script
+log_message "=== Démarrage du portail captif hôtelier ==="
+
+# Attendre que le réseau soit disponible
+log_message "Attente initialisation réseau..."
+sleep 10
+
+# Vérifier que le script iptables existe
+if [ ! -f "/usr/local/bin/captive-portal-iptables.sh" ]; then
+    log_message "ERREUR: Script iptables introuvable"
+    exit 1
+fi
+
+# Configuration des règles iptables
+log_message "Configuration iptables..."
+if /usr/local/bin/captive-portal-iptables.sh; then
+    log_message "✅ Règles iptables configurées"
+else
+    log_message "❌ ERREUR configuration iptables"
+    exit 1
+fi
+
+# Activation du forwarding IP
+if echo 1 > /proc/sys/net/ipv4/ip_forward; then
+    log_message "✅ IP forwarding activé"
+else
+    log_message "❌ ERREUR activation IP forwarding"
+fi
+
+# Redémarrage dnsmasq
+log_message "Redémarrage dnsmasq..."
+if systemctl restart dnsmasq; then
+    log_message "✅ dnsmasq redémarré"
+else
+    log_message "❌ ERREUR redémarrage dnsmasq"
+fi
+
+# Attendre que dnsmasq soit prêt
+sleep 2
+
+# Redémarrage nginx
+log_message "Redémarrage nginx..."
+if systemctl restart nginx; then
+    log_message "✅ nginx redémarré"
+else
+    log_message "❌ ERREUR redémarrage nginx"
+fi
+
+# Sauvegarde des règles iptables
+log_message "Sauvegarde règles iptables..."
+if iptables-save > /etc/iptables/rules.v4; then
+    log_message "✅ Règles iptables sauvegardées"
+else
+    log_message "⚠️  Attention: sauvegarde iptables échouée"
+fi
+
+# Test connectivité Internet
+log_message "Test connectivité Internet..."
+if ping -c 1 -W 5 8.8.8.8 >/dev/null 2>&1; then
+    log_message "✅ Connectivité Internet OK"
+else
+    log_message "❌ ATTENTION: Pas de connectivité Internet"
+fi
+
+# Test DNS local
+log_message "Test DNS local..."
+if nslookup google.com localhost >/dev/null 2>&1; then
+    log_message "✅ DNS local fonctionnel"
+else
+    log_message "❌ PROBLÈME DNS local"
+fi
+
+# Test serveur web
+log_message "Test serveur web..."
+if curl -s -o /dev/null -w "%{http_code}" http://192.168.10.220 | grep -q "200\|302"; then
+    log_message "✅ Serveur web accessible"
+else
+    log_message "❌ PROBLÈME serveur web"
+fi
+
+log_message "=== Portail captif démarré ==="
+log_message "URL du portail: http://192.168.10.220/portal"
+
+exit 0

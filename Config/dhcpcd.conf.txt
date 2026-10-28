@@ -1,0 +1,10 @@
+/etc/dhcpcd.conf
+
+---------------------------------------------------------------------------------------
+
+# Configuration pour interface Ethernet statique 
+interface etho 
+static ip_address=192.168.10.220/24 
+static routers=192.168.10.1 
+static domain_name_servers-8.8.8.8 1.1.1.1 
+nohook wpa_supplicant

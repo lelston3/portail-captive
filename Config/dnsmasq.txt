@@ -1,0 +1,52 @@
+/etc/dnsmasq.conf
+
+--------------------------------------------------------------------------------------
+# Interface d'écoute
+interface=eth0
+listen-address=192.168.10.220
+bind-interfaces
+
+# Le Pi fait UNIQUEMENT du DNS hijacking
+# Le DHCP reste sur le routeur R700
+
+# DNS Hijacking - Rediriger tous les domaines vers le serveur local
+address=/#/192.168.10.220
+
+# Gestion spécifique des requêtes de détection de portail captif
+address=/connectivitycheck.gstatic.com/192.168.10.220
+address=/clients3.google.com/192.168.10.220
+address=/clients1.google.com/192.168.10.220
+address=/clients4.google.com/192.168.10.220
+address=/connectivitycheck.android.com/192.168.10.220
+address=/detectportal.firefox.com/192.168.10.220
+address=/captive.apple.com/192.168.10.220
+address=/www.msftconnecttest.com/192.168.10.220
+address=/www.msftncsi.com/192.168.10.220
+address=/msftncsi.com/192.168.10.220
+address=/ipv6.msftncsi.com/192.168.10.220
+
+# Serveurs DNS upstream
+domain-needed
+bogus-priv
+no-resolv
+server=8.8.8.8
+server=1.1.1.1
+cache-size=150
+no-negcache
+local-ttl=30
+
+# Logging
+log-queries
+log-facility=/var/log/dnsmasq.log
+
+# Ne pas lire /etc/hosts
+no-hosts
+
+# Ne pas lire /etc/resolv.conf
+no-resolv
+
+# Écouter uniquement sur les interfaces spécifiées
+bind-interfaces
+
+# Désactiver DHCP complètement
+no-dhcp-interface=eth0

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portail Access - RSMA-NC</title>
+  <link rel="icon" href="LOGO_NG_PNG.png">
+  <style>
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+        box-sizing: border-box;
+        text-align: center;
+        font-family: 'Roboto', Arial, sans-serif;
+        font-size: 17px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #333;
+    }
+
+    .portal-container {
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        max-width: 500px;
+        width: 100%;
+    }
+
+    .logo {
+        max-width: 80px;
+        max-height: 80px;
+        margin-bottom: 20px;
+    }
+
+    h1 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        font-size: 24px;
+    }
+
+    .welcome-text {
+        color: #495057;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+
+    .wifi-info {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        border-left: 4px solid #007bff;
+    }
+
+    .wifi-info h3 {
+        margin: 0 0 15px 0;
+        color: #495057;
+    }
+
+    .signal-bar {
+        width: 100%;
+        height: 20px;
+        background: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 10px 0;
+    }
+
+    .signal-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #dc3545, #ffc107, #28a745);
+        transition: width 0.3s ease;
+        border-radius: 10px;
+    }
+
+    .connect-btn {
+        width: 100%;
+        background-color: #28a745;
+        border: 2px solid #1e7e34;
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+        padding: 18px 25px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        margin: 20px 0;
+    }
+
+    .connect-btn:hover {
+        background-color: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40,167,69,0.3);
+    }
+
+    .connect-btn:active {
+        transform: translateY(0);
+    }
+
+    .connect-btn:disabled {
+        background-color: #6c757d;
+        border-color: #5a6268;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .conditions-text {
+        font-size: 14px;
+        color: #6c757d;
+        margin: 20px 0;
+        line-height: 1.5;
+    }
+
+    .conditions-text a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .conditions-text a:hover {
+        text-decoration: underline;
+    }
+
+    .loading {
+        opacity: 0.7;
+    }
+
+    .success-message {
+        background: #d4edda;
+        color: #155724;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+        border-left: 4px solid #28a745;
+        display: none;
+    }
+
+    @media (max-width: 600px) {
+        .portal-container {
+            margin: 10px;
+            padding: 30px 20px;
+        }
+        
+        h1 {
+            font-size: 20px;
+        }
+        
+        .connect-btn {
+            font-size: 16px;
+            padding: 15px 20px;
+        }
+    }
+  </style>
+</head>
+<body>
+  <div class="portal-container">
+    <img src="LOGO_NG_PNG.png" alt="RSMA-NC" class="logo">
+    <h1>Bienvenue sur notre réseau WiFi</h1>
+    
+    <p class="welcome-text">
+        Cliquez sur le bouton ci-dessous pour accepter les conditions d'utilisation et accéder à Internet.
+    </p>
+    
+    <!-- Informations WiFi -->
+    <div class="wifi-info">
+        <h3 id="wifi-name">Réseau WiFi RSMA-NC</h3>
+        <div class="signal-bar">
+            <div class="signal-fill" id="signal-bar" style="width: 75%"></div>
+        </div>
+        <p id="signal-text">Signal: Excellent</p>
+        <p><small id="ap-info">Connexion sécurisée</small></p>
+    </div>
+
+    <!-- Bouton de connexion simple -->
+    <button id="connectButton" class="connect-btn" onclick="handleConnect()">
+        🌐 J'accepte - Me connecter
+    </button>
+
+    <div class="success-message" id="successMessage">
+        🎉 Connexion réussie ! Redirection en cours...
+    </div>
+
+    <div class="conditions-text">
+        En cliquant sur "J'accepte", vous acceptez nos 
+        <a href="condition-utilisation.html" target="_blank">conditions d'utilisation</a>
+        et autorisez l'enregistrement de vos données de connexion conformément à la réglementation en vigueur.
+        <br><small>Connexion sécurisée - Votre vie privée est protégée</small>
+    </div>
+  </div>
+
+  <script>
+    // Mise à jour des informations WiFi
+    function updateWifiInfo() {
+        fetch('wifi-infos.php')
+            .then(response => response.json())
+            .then(data => {
+                if (data.ssid && data.ssid !== 'Inconnu') {
+                    document.getElementById('wifi-name').textContent = 'Réseau: ' + data.ssid;
+                    document.getElementById('signal-bar').style.width = data.signal_percent + '%';
+                    document.getElementById('signal-text').textContent = 
+                        'Signal: ' + data.signal_dbm + ' dBm (' + data.signal_percent + '%)';
+                    document.getElementById('ap-info').textContent = 
+                        'Point d\'accès: ' + data.ap_mac;
+                }
+            })
+            .catch(error => {
+                console.log('Info WiFi non disponible:', error);
+                // Garder les valeurs par défaut
+            });
+    }
+
+    // Fonction de connexion simple
+    function handleConnect() {
+        const button = document.getElementById('connectButton');
+        const successMessage = document.getElementById('successMessage');
+        
+        // Animation de connexion
+        button.innerHTML = '⏳ Connexion en cours...';
+        button.disabled = true;
+        document.body.classList.add('loading');
+        
+        // Afficher le message de succès
+        setTimeout(() => {
+            successMessage.style.display = 'block';
+        }, 1000);
+        
+        // Redirection vers le script PHP simple
+        setTimeout(() => {
+            window.location.href = 'connect.php';
+        }, 2500);
+    }
+
+    // Charger les infos WiFi au démarrage
+    updateWifiInfo();
+    
+    // Mettre à jour toutes les 15 secondes
+    setInterval(updateWifiInfo, 15000);
+  </script>
+</body>
+</html>
